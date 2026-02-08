@@ -1,0 +1,9 @@
+services:
+  api:
+    build:
+      args:
+        REQUIREMENTS: requirements-dev.txt
+    restart: "no"
+    environment:
+      - ENVIRONMENT=test
+      - DB_VOLUME=app-db-test

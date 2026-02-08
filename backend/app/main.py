@@ -4,15 +4,19 @@ from contextlib import asynccontextmanager
 
 
 asynccontextmanager
+
+
 async def lifespan(_: FastAPI):
     """Context manager that handles startup and shutdown of the app."""
     # TODO: initialize resources
     yield
     # TODO: clean up resources
 
+
 app = FastAPI(title="Service Name API", lifespan=lifespan)
 
 # app.include_router(router)
+
 
 @app.get("/")
 def root():
