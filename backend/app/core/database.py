@@ -37,7 +37,7 @@ async def db_health_check(timeout_seconds: float = 1.0) -> bool:
                 db_session.execute(text("SELECT 1")),
                 timeout=timeout_seconds,
             )
-    except asyncio.TimeoutError, socket.gaierror:
+    except TimeoutError, socket.gaierror:
         return False
 
     return True

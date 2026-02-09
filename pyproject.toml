@@ -27,4 +27,21 @@ dev = [
 line-length = 81
 
 [tool.ruff.lint]
-select = ["I", "F"]  # I: isort, F: Pyflakes (removes unused imports)
+# Available Rules: https://docs.astral.sh/ruff/rules/
+select = [
+    "I",      # isort - import sorting
+    "F",      # Pyflakes - unused imports and undefined names
+    "E",      # pycodestyle errors - whitespace, indentation, syntax
+    "W",      # pycodestyle warnings - style warnings
+    "N",      # pep8-naming - naming conventions (functions, classes, variables)
+    "S",      # flake8-bandit - security issues (SQL injection, hardcoded secrets)
+    "B",      # flake8-bugbear - common bugs (mutable defaults, unreachable code)
+    "BLE",    # blind except
+    "UP",     # pyupgrade - suggests modern Python syntax
+    "ARG",    # flake8-unused-arguments - unused function arguments
+    "ASYNC",  # flake8-async - async/await anti-patterns (important for FastAPI)
+    "PIE",    # flake8-pie - simplifications and best practices
+    "RUF",    # Ruff-specific rules - modern best practices
+]
+
+per-file-ignores = { "backend/tests/**" = ["S101"] } # Use of assert detected

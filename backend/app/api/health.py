@@ -22,7 +22,7 @@ async def health():
     try:
         if await db_health_check() is True:
             status_code = status.HTTP_204_NO_CONTENT
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"Database health check failed: {e}")
 
     return Response(status_code=status_code)

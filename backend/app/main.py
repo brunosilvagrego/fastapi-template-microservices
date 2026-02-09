@@ -9,9 +9,8 @@ from app.core.logging_config import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-asynccontextmanager
 
-
+@asynccontextmanager
 async def lifespan(_: FastAPI):
     """Context manager that handles startup and shutdown of the app."""
     logger.info("Starting up the application.")
