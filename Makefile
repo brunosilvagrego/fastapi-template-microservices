@@ -86,24 +86,24 @@ DOCKER_COMPOSE_COMMAND_TEST=\
 
 test:
 	$(DOCKER_COMPOSE_COMMAND_TEST) run --rm --build --remove-orphans api pytest /src/tests $(ARGS); \
-	$(DOCKER_COMPOSE_COMMAND_TEST) down
+	$(DOCKER_COMPOSE_COMMAND_TEST) down -v
 
 # Helper #
 
 help:
 	@echo "Available commands:"
-	@echo "  make requirements-dev - Export development dependencies to requirements-dev.txt"
-	@echo "  make requirements - Export production dependencies to requirements.txt"
-	@echo "  make format - Format code with ruff"
-	@echo "  make lint - Check code with ruff"
-	@echo "  make lint-fix - Fix linting issues with ruff"
-	@echo "  make check-types - Check types with mypy"
-	@echo "  make up - Start containers"
-	@echo "  make down - Stop containers"
-	@echo "  make postgres-up - Start only Postgres container"
-	@echo "  make postgres-down - Stop only Postgres container"
-	@echo "  make access-postgres - Access Postgres container with psql"
-	@echo "  make run-sql SQL_FILE=path/to/query.sql - Run SQL file and get CSV output"
-	@echo "  make load-database-backup DB_DUMP_PATH=path/to/backup.sql - Load database backup from SQL file"
-	@echo "  make test - Run tests in a test container"
-	@echo "  make help - Show this help message"
+	@echo "  make requirements         - Export production dependencies to requirements.txt"
+	@echo "  make requirements-dev     - Export development dependencies to requirements-dev.txt"
+	@echo "  make format               - Format code with ruff"
+	@echo "  make lint                 - Check code with ruff"
+	@echo "  make lint-fix             - Fix linting issues with ruff"
+	@echo "  make check-types          - Check types with mypy"
+	@echo "  make up                   - Start containers"
+	@echo "  make down                 - Stop containers"
+	@echo "  make postgres-up          - Start only Postgres container"
+	@echo "  make postgres-down        - Stop only Postgres container"
+	@echo "  make access-postgres      - Access Postgres container with psql"
+	@echo "  make run-sql              - Run SQL file and get CSV output"
+	@echo "  make load-database-backup - Load database backup from SQL file"
+	@echo "  make test                 - Run tests in a test container"
+	@echo "  make help                 - Show this help message"

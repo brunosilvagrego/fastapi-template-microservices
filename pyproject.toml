@@ -22,3 +22,9 @@ dev = [
     "sqlalchemy[mypy]>=2.0.46,<3.0.0",
     "types-requests>=2.32.4.20260107,<3.0.0.0",
 ]
+
+[tool.ruff]
+line-length = 81
+
+[tool.ruff.lint]
+select = ["I", "F"]  # I: isort, F: Pyflakes (removes unused imports)
