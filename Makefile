@@ -36,6 +36,14 @@ up:
 down:
 	$(DOCKER_COMPOSE_COMMAND_DEV) down $(ARGS)
 
+# Alembic (database migrations) #
+
+alembic-new:
+	$(DOCKER_COMPOSE_COMMAND_DEV) exec api alembic revision --autogenerate -m "$(MSG)"
+
+alembic-upgrade:
+	$(DOCKER_COMPOSE_COMMAND_DEV) exec api alembic upgrade head
+
 # Postgres #
 
 postgres-up:
@@ -100,6 +108,8 @@ help:
 	@echo "  make check-types          - Check types with mypy"
 	@echo "  make up                   - Start containers"
 	@echo "  make down                 - Stop containers"
+	@echo "  make alembic-new MSG=..   - Create new Alembic migration (autogenerate)"
+	@echo "  make alembic-upgrade      - Upgrade Alembic to head"
 	@echo "  make postgres-up          - Start only Postgres container"
 	@echo "  make postgres-down        - Stop only Postgres container"
 	@echo "  make access-postgres      - Access Postgres container with psql"
