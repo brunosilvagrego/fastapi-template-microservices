@@ -2,8 +2,8 @@
 
 set -e
 
-# # Run migrations
-# alembic upgrade head
+# Run migrations
+alembic upgrade head
 
 # # Populate database with initial data
 # [[ "$ENVIRONMENT" == "dev" ]] && python3 /src/scripts/initial_data.py

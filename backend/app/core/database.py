@@ -1,5 +1,6 @@
 import asyncio
 import socket
+from enum import StrEnum
 
 from sqlalchemy import URL, text
 from sqlalchemy.ext.asyncio import (
@@ -9,14 +10,27 @@ from sqlalchemy.ext.asyncio import (
 
 from app.core.config import settings
 
-url = URL.create(
-    drivername="postgresql+asyncpg",  # asynchronous postgres driver
-    username=settings.DB_USERNAME,
-    password=settings.DB_PASSWORD,
-    host=settings.DB_HOST,
-    port=settings.DB_PORT,
-    database=settings.DB_DATABASE,
-)
+
+class DatabaseDriver(StrEnum):
+    """Enum for supported database drivers."""
+
+    ASYNCPG = "postgresql+asyncpg"
+    PSYCOPG = "postgresql+psycopg"
+
+
+def get_database_url(drivername: str = DatabaseDriver.ASYNCPG) -> URL:
+    """Construct the database URL from settings."""
+    return URL.create(
+        drivername=drivername,
+        username=settings.DB_USERNAME,
+        password=settings.DB_PASSWORD,
+        host=settings.DB_HOST,
+        port=settings.DB_PORT,
+        database=settings.DB_DATABASE,
+    )
+
+
+url = get_database_url()
 
 engine = create_async_engine(url)
 
