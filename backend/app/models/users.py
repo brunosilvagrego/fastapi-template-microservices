@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 from app.models.base import Base
 
@@ -11,4 +11,11 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     full_name = Column(String(255), nullable=True)
+    created_at = Column(DateTime, nullable=False)
+    deleted_at = Column(DateTime, nullable=True)
     is_superuser = Column(Boolean, default=False)
+    hashed_password = Column(String, nullable=False)
+
+    @property
+    def is_active(self) -> bool:
+        return self.deleted_at is None

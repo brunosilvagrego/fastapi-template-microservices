@@ -1,5 +1,6 @@
 services:
   api:
+    user: ""
     build:
       args:
         REQUIREMENTS: requirements-dev.txt
