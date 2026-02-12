@@ -3,11 +3,15 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    DB_HOST: str = "postgres"
-    DB_PORT: int = 5432
-    DB_DATABASE: str = "postgres"
-    DB_USERNAME: str = "postgres"
-    DB_PASSWORD: str = "postgres"  # noqa: S105
+    DB_HOST: str
+    DB_PORT: int
+    DB_DATABASE: str
+    DB_USERNAME: str
+    DB_PASSWORD: str
+
+    # Security
+    JWT_SECRET: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
 
 settings = Settings()
