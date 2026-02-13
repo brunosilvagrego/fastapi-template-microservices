@@ -56,7 +56,7 @@ class Oauth2ClientCredentials(OAuth2):
 class OAuth2ClientCredentialsRequestForm:
     def __init__(
         self,
-        grant_type: str = Form(None, regex="client_credentials"),
+        grant_type: str = Form(None, pattern="client_credentials"),
         scope: str = Form(""),
         client_id: str | None = Form(None),
         client_secret: str | None = Form(None),
