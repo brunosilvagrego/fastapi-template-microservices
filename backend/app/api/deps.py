@@ -5,7 +5,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.database import SessionLocal
+from app.core.database import SessionManager
 from app.core.security import JWT_ALGORITHM, oauth2_scheme
 from app.models.clients import Client
 from app.schemas.token import TokenData
@@ -15,9 +15,9 @@ EXPIRED_JWT = "Expired JWT"
 INVALID_JWT = "Invalid JWT"
 
 
-async def get_session():
-    async with SessionLocal() as session:
-        yield session
+async def get_db_session():
+    async with SessionManager() as db_session:
+        yield db_session
 
 
 def raise_unauthorized(detail: str):
@@ -42,7 +42,7 @@ def get_token_data(token: str = Depends(oauth2_scheme)) -> TokenData:
 
 async def get_current_client(
     token: TokenData = Depends(get_token_data),
-    db_session: AsyncSession = Depends(get_session),
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> Client:
     if token.client_id is None:
         raise_unauthorized(INVALID_JWT)

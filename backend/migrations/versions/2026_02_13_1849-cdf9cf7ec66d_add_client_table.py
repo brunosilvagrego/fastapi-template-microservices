@@ -1,8 +1,8 @@
 """Add client table
 
-Revision ID: f6f7aa29e6a5
+Revision ID: cdf9cf7ec66d
 Revises:
-Create Date: 2026-02-13 17:50:23.079097
+Create Date: 2026-02-13 18:49:59.038080
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "f6f7aa29e6a5"
+revision: str = "cdf9cf7ec66d"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -24,8 +24,8 @@ def upgrade() -> None:
         "client",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("deleted_at", sa.DateTime(), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("is_admin", sa.Boolean(), nullable=False),
         sa.Column("oauth_id", sa.String(), nullable=False),
         sa.Column("oauth_secret_hash", sa.String(), nullable=False),

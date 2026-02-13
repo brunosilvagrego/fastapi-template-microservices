@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_session
+from app.api.deps import get_db_session
 from app.core.security import (
     OAuth2ClientCredentialsRequestForm,
     authenticate_client,
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/token")
 async def new_access_token(
     form: Annotated[OAuth2ClientCredentialsRequestForm, Depends()],
-    db_session: AsyncSession = Depends(get_session),
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> Token:
     client = await authenticate_client(
         db_session=db_session,

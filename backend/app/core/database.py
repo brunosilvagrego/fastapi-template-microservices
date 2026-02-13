@@ -34,7 +34,7 @@ url = get_database_url()
 
 engine = create_async_engine(url)
 
-SessionLocal = async_sessionmaker(
+SessionManager = async_sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine,
@@ -46,7 +46,7 @@ async def db_health_check(timeout_seconds: float = 1.0) -> bool:
     """Check if the database is up. Returns True if the database is healthy,
     False otherwise."""
     try:
-        async with SessionLocal() as db_session:
+        async with SessionManager() as db_session:
             await asyncio.wait_for(
                 db_session.execute(text("SELECT 1")),
                 timeout=timeout_seconds,

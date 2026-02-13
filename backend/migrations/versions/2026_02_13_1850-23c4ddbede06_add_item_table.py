@@ -1,8 +1,8 @@
 """Add item table
 
-Revision ID: 5583a2d9ea90
-Revises: f6f7aa29e6a5
-Create Date: 2026-02-13 17:52:02.181137
+Revision ID: 23c4ddbede06
+Revises: cdf9cf7ec66d
+Create Date: 2026-02-13 18:50:57.786465
 
 """
 
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "5583a2d9ea90"
-down_revision: str | Sequence[str] | None = "f6f7aa29e6a5"
+revision: str = "23c4ddbede06"
+down_revision: str | Sequence[str] | None = "cdf9cf7ec66d"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

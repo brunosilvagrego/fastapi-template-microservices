@@ -93,8 +93,16 @@ DOCKER_COMPOSE_COMMAND_TEST=\
 	--file docker-compose.test.yaml
 
 test:
-	$(DOCKER_COMPOSE_COMMAND_TEST) run --rm --build --remove-orphans api pytest /src/tests $(ARGS); \
+	$(DOCKER_COMPOSE_COMMAND_TEST) run --rm --build --remove-orphans api \
+	bash -c "alembic upgrade head && \
+	python3 /src/scripts/initial_data.py && \
+	pytest /src/tests $(ARGS)"
+
+test-down:
 	$(DOCKER_COMPOSE_COMMAND_TEST) down -v
+
+test-access-postgres:
+	$(DOCKER_COMPOSE_COMMAND_TEST) exec postgres psql -U postgres $(ARGS)
 
 # Helper #
 

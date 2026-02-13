@@ -6,5 +6,5 @@ services:
         REQUIREMENTS: requirements-dev.txt
     restart: "no"
     environment:
-      - ENVIRONMENT=test
+      - ENVIRONMENT=testing
       - DB_VOLUME=app-db-test
