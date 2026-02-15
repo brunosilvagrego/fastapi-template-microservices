@@ -8,6 +8,7 @@ from fastapi.openapi.models import OAuthFlowClientCredentials, OAuthFlows
 from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
 from pwdlib import PasswordHash
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.core import utils
@@ -72,16 +73,16 @@ oauth2_scheme = Oauth2ClientCredentials(tokenUrl="/api/auth/token")
 password_hash = PasswordHash.recommended()
 
 
-def verify_password(plain_password, hashed_password):
+def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
 
 
-def get_password_hash(password):
+def get_password_hash(password: str) -> str:
     return password_hash.hash(password)
 
 
 async def authenticate_client(
-    db_session,
+    db_session: AsyncSession,
     client_id: str | None,
     client_secret: str | None,
 ) -> Client | None:
@@ -93,13 +94,13 @@ async def authenticate_client(
     if client is None:
         return None
 
-    if not verify_password(client, client.oauth_secret_hash):
+    if not verify_password(client_secret, client.oauth_secret_hash):
         return None
 
     return client
 
 
-def create_access_token(data: dict):
+def create_access_token(data: dict) -> str:
     to_encode = deepcopy(data)
 
     expire = utils.now_utc() + timedelta(
@@ -117,5 +118,5 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
-def generate_client_credentials():
+def generate_client_credentials() -> tuple[str, str]:
     return (secrets.token_urlsafe(16), secrets.token_urlsafe(32))

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
 
@@ -6,7 +7,7 @@ from app.models.base import Base
 class Item(Base):
     __tablename__ = "item"
 
-    id = Column(Integer, primary_key=True, index=True, unique=True)
-    title = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    owner_id = Column(Integer, ForeignKey("client.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True, unique=True)
+    title: Mapped[str]
+    description: Mapped[str]
+    owner_id: Mapped[int] = mapped_column(ForeignKey("client.id"))
