@@ -8,6 +8,12 @@ from httpx import ASGITransport, AsyncClient
 from .utils import make_authenticated_client
 
 
+@pytest.fixture(scope="session")
+def anyio_backend():
+    """Use asyncio backend for all async tests."""
+    return "asyncio"
+
+
 async def get_test_db_session():
     """Test-specific database session that creates a fresh connection each
     time."""
@@ -16,12 +22,6 @@ async def get_test_db_session():
             yield db_session
         finally:
             await db_session.close()
-
-
-@pytest.fixture(scope="session")
-def anyio_backend():
-    """Use asyncio backend for all async tests."""
-    return "asyncio"
 
 
 @pytest.fixture(autouse=True)

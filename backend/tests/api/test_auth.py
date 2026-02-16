@@ -11,14 +11,12 @@ API_AUTH_ENDPOINT = "/api/auth/token"
 
 @pytest.mark.anyio
 async def test_no_credentials(client: AsyncClient) -> None:
-    """Test auth endpoint with no credentials."""
     response = await client.post(API_AUTH_ENDPOINT)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.mark.anyio
 async def test_invalid_credentials(client: AsyncClient) -> None:
-    """Test auth endpoint with invalid credentials."""
     response = await client.post(
         API_AUTH_ENDPOINT,
         data=get_auth_request_data("invalid", "invalid"),
@@ -39,7 +37,6 @@ async def test_valid_credentials(
     client_id: str,
     client_secret: str,
 ) -> None:
-    """Test auth endpoint with valid credentials."""
     response = await client.post(
         API_AUTH_ENDPOINT,
         data=get_auth_request_data(client_id, client_secret),

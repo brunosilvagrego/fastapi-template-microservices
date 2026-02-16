@@ -31,7 +31,11 @@ router = APIRouter(
 # TODO: move logic of all endpoints to service layer
 
 
-@router.post("", response_model=ClientCreateResponse)
+@router.post(
+    "",
+    response_model=ClientCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_client(
     client_create: ClientCreate,
     db_session: AsyncSession = Depends(get_db_session),
@@ -65,14 +69,14 @@ async def list_clients(
     return [client.schema() for client in clients]
 
 
-@router.get("/{client_id}", response_model=ClientSchema)
+@router.get("/{id}", response_model=ClientSchema)
 async def get_client(
     client: Client = Depends(get_client_by_id),
 ) -> ClientSchema:
     return client.schema()
 
 
-@router.patch("/{client_id}", response_model=ClientUpdateResponse)
+@router.patch("/{id}", response_model=ClientUpdateResponse)
 async def update_client(
     client_update: ClientUpdate,
     client: Client = Depends(get_client_by_id),
@@ -99,12 +103,12 @@ async def update_client(
         created_at=updated_client.created_at,
         deleted_at=updated_client.deleted_at,
         is_admin=updated_client.is_admin,
-        client_id=updated_client.oauth_id,
+        client_id=new_client_id,
         client_secret=new_client_secret,
     )
 
 
-@router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_client(
     client: Client = Depends(get_client_by_id),
     db_session: AsyncSession = Depends(get_db_session),

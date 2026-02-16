@@ -44,13 +44,6 @@ def check_client(client: Client | None) -> Client:
     return client
 
 
-def raise_inactive_client():
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Inactive client",
-    )
-
-
 def get_token_data(token: str = Depends(oauth2_scheme)) -> TokenData:
     try:
         payload = jwt.decode(
@@ -96,8 +89,8 @@ async def get_current_admin_client(
 
 
 async def get_client_by_id(
-    client_id: int,
+    id: int,
     db_session: AsyncSession = Depends(get_db_session),
 ) -> Client:
-    client = check_client(await service_clients.get(db_session, client_id))
+    client = check_client(await service_clients.get(db_session, id))
     return client
