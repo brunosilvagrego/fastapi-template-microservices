@@ -16,8 +16,6 @@ from app.core.config import settings
 from app.models import Client
 from app.services import clients as service_clients
 
-JWT_ALGORITHM = "HS256"
-
 
 class Oauth2ClientCredentials(OAuth2):
     def __init__(
@@ -42,12 +40,14 @@ class Oauth2ClientCredentials(OAuth2):
     async def __call__(self, request: Request) -> str | None:
         authorization: str | None = request.headers.get("Authorization")
         scheme, param = get_authorization_scheme_param(authorization)
-        if not authorization or scheme.lower() != "bearer":
+        if not authorization or scheme.lower() != settings.JWT_TOKEN_TYPE:
             if self.auto_error:
                 raise HTTPException(
                     status_code=HTTP_401_UNAUTHORIZED,
                     detail="Not authenticated",
-                    headers={"WWW-Authenticate": "Bearer"},
+                    headers={
+                        "WWW-Authenticate": settings.JWT_TOKEN_TYPE.title()
+                    },
                 )
             else:
                 return None
@@ -81,6 +81,7 @@ def get_password_hash(password: str) -> str:
     return password_hash.hash(password)
 
 
+# TODO: move to service layer
 async def authenticate_client(
     db_session: AsyncSession,
     client_id: str | None,
@@ -112,11 +113,17 @@ def create_access_token(data: dict) -> str:
     encoded_jwt = jwt.encode(
         to_encode,
         settings.JWT_SECRET,
-        algorithm=JWT_ALGORITHM,
+        algorithm=settings.JWT_ALGORITHM,
     )
 
     return encoded_jwt
 
 
-def generate_client_credentials() -> tuple[str, str]:
+def generate_oauth_client_credentials() -> tuple[str, str]:
     return (secrets.token_urlsafe(16), secrets.token_urlsafe(32))
+
+
+def new_client_credentials() -> tuple[str, str, str]:
+    client_id, client_secret = generate_oauth_client_credentials()
+    client_secret_hash = get_password_hash(client_secret)
+    return client_id, client_secret, client_secret_hash

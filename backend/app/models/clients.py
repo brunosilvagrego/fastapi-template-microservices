@@ -4,6 +4,7 @@ from sqlalchemy import DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
+from app.schemas.clients import ClientSchema
 
 
 class Client(Base):
@@ -23,3 +24,12 @@ class Client(Base):
     @property
     def is_active(self) -> bool:
         return self.deleted_at is None
+
+    def schema(self) -> ClientSchema:
+        return ClientSchema(
+            id=self.id,
+            name=self.name,
+            created_at=self.created_at,
+            deleted_at=self.deleted_at,
+            is_admin=self.is_admin,
+        )

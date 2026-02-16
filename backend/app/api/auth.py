@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session
+from app.core.config import settings
 from app.core.security import (
     OAuth2ClientCredentialsRequestForm,
     authenticate_client,
@@ -22,6 +23,7 @@ async def new_access_token(
     form: Annotated[OAuth2ClientCredentialsRequestForm, Depends()],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> Token:
+    # TODO: move logic of this endpoint to service layer
     client = await authenticate_client(
         db_session=db_session,
         client_id=form.client_id,
@@ -32,9 +34,8 @@ async def new_access_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect client_id or client_secret",
-            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": client.id})
+    access_token = create_access_token(data={"sub": client.oauth_id})
 
-    return Token(access_token=access_token, token_type="bearer")  # noqa: S106
+    return Token(access_token=access_token, token_type=settings.JWT_TOKEN_TYPE)

@@ -1,3 +1,5 @@
+import logging
+
 import jwt
 from fastapi import Depends, HTTPException, status
 from jwt.exceptions import ExpiredSignatureError, PyJWTError
@@ -6,10 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import SessionManager
-from app.core.security import JWT_ALGORITHM, oauth2_scheme
+from app.core.security import oauth2_scheme
 from app.models.clients import Client
 from app.schemas.token import TokenData
 from app.services import clients as service_clients
+
+logger = logging.getLogger(__name__)
 
 EXPIRED_JWT = "Expired JWT"
 INVALID_JWT = "Invalid JWT"
@@ -24,31 +28,7 @@ def raise_unauthorized(detail: str):
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
 
 
-def get_token_data(token: str = Depends(oauth2_scheme)) -> TokenData:
-    try:
-        payload = jwt.decode(
-            jwt=token,
-            key=settings.JWT_SECRET,
-            algorithms=[JWT_ALGORITHM],
-        )
-        token_data = TokenData(client_id=payload.get("sub"))
-    except ExpiredSignatureError:
-        raise_unauthorized(EXPIRED_JWT)
-    except PyJWTError, ValidationError:
-        raise_unauthorized(INVALID_JWT)
-
-    return token_data
-
-
-async def get_current_client(
-    token: TokenData = Depends(get_token_data),
-    db_session: AsyncSession = Depends(get_db_session),
-) -> Client:
-    if token.client_id is None:
-        raise_unauthorized(INVALID_JWT)
-
-    client = await service_clients.get_by_oauth_id(db_session, token.client_id)
-
+def check_client(client: Client | None) -> Client:
     if client is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -61,4 +41,63 @@ async def get_current_client(
             detail="Inactive client",
         )
 
+    return client
+
+
+def raise_inactive_client():
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Inactive client",
+    )
+
+
+def get_token_data(token: str = Depends(oauth2_scheme)) -> TokenData:
+    try:
+        payload = jwt.decode(
+            jwt=token,
+            key=settings.JWT_SECRET,
+            algorithms=[settings.JWT_ALGORITHM],
+        )
+        token_data = TokenData(client_id=payload.get("sub"))
+    except ExpiredSignatureError:
+        raise_unauthorized(EXPIRED_JWT)
+    except (PyJWTError, ValidationError) as e:
+        logger.warning(f"Invalid JWT: {e}")
+        raise_unauthorized(INVALID_JWT)
+
+    return token_data
+
+
+async def get_current_client(
+    token: TokenData = Depends(get_token_data),
+    db_session: AsyncSession = Depends(get_db_session),
+) -> Client:
+    if token.client_id is None:
+        logger.warning("Token does not contain client_id")
+        raise_unauthorized(INVALID_JWT)
+
+    client = check_client(
+        await service_clients.get_by_oauth_id(db_session, token.client_id)
+    )
+
+    return client
+
+
+async def get_current_admin_client(
+    current_client: Client = Depends(get_current_client),
+) -> Client:
+    if not current_client.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
+        )
+
+    return current_client
+
+
+async def get_client_by_id(
+    client_id: int,
+    db_session: AsyncSession = Depends(get_db_session),
+) -> Client:
+    client = check_client(await service_clients.get(db_session, client_id))
     return client

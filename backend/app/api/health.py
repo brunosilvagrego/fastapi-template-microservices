@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/health", tags=["Health"])
 
 
-@router.get("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.get("", status_code=status.HTTP_204_NO_CONTENT)
 async def health():
     """Return the API health status."""
 

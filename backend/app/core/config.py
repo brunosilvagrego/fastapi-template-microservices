@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     # Security
     JWT_SECRET: str
+    JWT_TOKEN_TYPE: str
+    JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # Default users

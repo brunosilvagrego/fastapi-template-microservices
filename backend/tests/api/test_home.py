@@ -1,10 +1,10 @@
 import pytest
+from fastapi import status
 from httpx import AsyncClient
 
 
 @pytest.mark.anyio
-async def test_home(async_client: AsyncClient) -> None:
-    # Async test example
-    response = await async_client.get("/")
-    assert response.status_code == 200
+async def test_home(client: AsyncClient) -> None:
+    response = await client.get("/")
+    assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"message": "Hello World"}
