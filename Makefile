@@ -5,22 +5,28 @@ DOCKER_COMPOSE_ENV_FILE=.env.dev
 # Local development #
 
 requirements:
-	cd backend && uv export --no-dev --format requirements-txt > requirements.txt
+	uv export --no-dev --format requirements-txt > backend/requirements.txt
 
 requirements-dev:
-	cd backend && uv export --format requirements-txt > requirements-dev.txt
+	uv export --format requirements-txt > backend/requirements-dev.txt
 
 format:
-	cd backend && uv run ruff format .
+	uv run ruff format backend
 
 lint:
-	cd backend && uv run ruff check .
+	uv run ruff check backend
 
 lint-fix:
-	cd backend && uv run ruff check . --fix
+	uv run ruff check backend --fix
 
 check-types:
-	cd backend && uv run mypy app
+	uv run mypy backend/app
+
+code-analysis-cc:
+	uv run radon cc backend -a -s
+
+code-analysis-metrics:
+	uv run radon raw backend -s
 
 # Backend #
 
