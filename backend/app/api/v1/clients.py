@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,8 +16,6 @@ from app.schemas.clients import (
     ClientUpdateResponse,
 )
 from app.services import clients as service_clients
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/clients",
@@ -63,6 +59,7 @@ async def list_clients(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> list[ClientSchema]:
     clients = await service_clients.get_all(db_session)
+
     return [client.schema() for client in clients]
 
 

@@ -107,6 +107,9 @@ test:
 test-down:
 	$(DOCKER_COMPOSE_COMMAND_TEST) down -v
 
+test-with-cleanup:
+	$(MAKE) test; $(MAKE) test-down
+
 test-access-postgres:
 	$(DOCKER_COMPOSE_COMMAND_TEST) exec postgres psql -U postgres $(ARGS)
 

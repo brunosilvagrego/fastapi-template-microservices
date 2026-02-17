@@ -10,8 +10,10 @@ from app.core.config import settings
 from app.core.database import SessionManager
 from app.core.security import oauth2_scheme
 from app.models.clients import Client
+from app.models.items import Item
 from app.schemas.token import TokenData
 from app.services import clients as service_clients
+from app.services import items as service_items
 
 logger = logging.getLogger(__name__)
 
@@ -94,3 +96,19 @@ async def get_client_by_id(
 ) -> Client:
     client = check_client(await service_clients.get(db_session, id))
     return client
+
+
+async def get_item_by_id(
+    id: int,
+    client: Client = Depends(get_current_client),
+    db_session: AsyncSession = Depends(get_db_session),
+) -> Item:
+    item = await service_items.get(db_session, id, owner_id=client.id)
+
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found",
+        )
+
+    return item
