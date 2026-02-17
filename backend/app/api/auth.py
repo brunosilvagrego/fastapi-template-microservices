@@ -23,7 +23,6 @@ async def new_access_token(
     form: Annotated[OAuth2ClientCredentialsRequestForm, Depends()],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> Token:
-    # TODO: move logic of this endpoint to service layer
     client = await authenticate_client(
         db_session=db_session,
         client_id=form.client_id,

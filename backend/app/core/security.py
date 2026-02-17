@@ -81,7 +81,16 @@ def get_password_hash(password: str) -> str:
     return password_hash.hash(password)
 
 
-# TODO: move to service layer
+def generate_oauth_client_credentials() -> tuple[str, str]:
+    return (secrets.token_urlsafe(16), secrets.token_urlsafe(32))
+
+
+def new_client_credentials() -> tuple[str, str, str]:
+    client_id, client_secret = generate_oauth_client_credentials()
+    client_secret_hash = get_password_hash(client_secret)
+    return client_id, client_secret, client_secret_hash
+
+
 async def authenticate_client(
     db_session: AsyncSession,
     client_id: str | None,
@@ -117,13 +126,3 @@ def create_access_token(data: dict) -> str:
     )
 
     return encoded_jwt
-
-
-def generate_oauth_client_credentials() -> tuple[str, str]:
-    return (secrets.token_urlsafe(16), secrets.token_urlsafe(32))
-
-
-def new_client_credentials() -> tuple[str, str, str]:
-    client_id, client_secret = generate_oauth_client_credentials()
-    client_secret_hash = get_password_hash(client_secret)
-    return client_id, client_secret, client_secret_hash

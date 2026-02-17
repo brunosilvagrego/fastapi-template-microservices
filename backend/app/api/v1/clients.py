@@ -28,9 +28,6 @@ router = APIRouter(
 )
 
 
-# TODO: move logic of all endpoints to service layer
-
-
 @router.post(
     "",
     response_model=ClientCreateResponse,
