@@ -32,6 +32,7 @@ services:
       - ./backend/app:/src/app
       - ./backend/migrations:/src/migrations
       - ./backend/scripts:/src/scripts
+      - ./htmlcov:/src/htmlcov
     depends_on:
         postgres:
           condition: service_healthy

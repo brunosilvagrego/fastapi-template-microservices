@@ -1,32 +1,33 @@
 .PHONY: %
 
 DOCKER_COMPOSE_ENV_FILE=.env.dev
+SRC_DIR=backend
 
 # Local development #
 
 requirements:
-	uv export --no-dev --format requirements-txt > backend/requirements.txt
+	uv export --no-dev --format requirements-txt > $(SRC_DIR)/requirements.txt
 
 requirements-dev:
-	uv export --format requirements-txt > backend/requirements-dev.txt
+	uv export --format requirements-txt > $(SRC_DIR)/requirements-dev.txt
 
 format:
-	uv run ruff format backend
+	uv run ruff format $(SRC_DIR)
 
 lint:
-	uv run ruff check backend
+	uv run ruff check $(SRC_DIR)
 
 lint-fix:
-	uv run ruff check backend --fix
+	uv run ruff check $(SRC_DIR) --fix
 
 check-types:
-	uv run mypy backend/app
+	uv run mypy $(SRC_DIR)/app
 
 code-analysis-cc:
-	uv run radon cc backend -a -s
+	uv run radon cc $(SRC_DIR) -a -s
 
 code-analysis-metrics:
-	uv run radon raw backend -s
+	uv run radon raw $(SRC_DIR) -s
 
 # Backend #
 
@@ -102,7 +103,8 @@ test:
 	$(DOCKER_COMPOSE_COMMAND_TEST) run --rm --build --remove-orphans api \
 	bash -c "alembic upgrade head && \
 	python3 /src/scripts/initial_data.py && \
-	pytest /src/tests $(ARGS)"
+	pytest /src/tests --cov=app --cov-report=term-missing --cov-report=html \
+	$(ARGS)"
 
 test-down:
 	$(DOCKER_COMPOSE_COMMAND_TEST) down -v
