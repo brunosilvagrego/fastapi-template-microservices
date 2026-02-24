@@ -18,6 +18,8 @@ from app.services import clients as service_clients
 
 
 class Oauth2ClientCredentials(OAuth2):
+    """Based on: https://github.com/fastapi/fastapi/discussions/7846"""
+
     def __init__(
         self,
         tokenUrl: str,  # noqa: N803

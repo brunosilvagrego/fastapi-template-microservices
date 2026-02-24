@@ -23,6 +23,9 @@ lint-fix:
 check-types:
 	uv run mypy $(SRC_DIR)/app
 
+code-cleanup:
+	$(MAKE) format; $(MAKE) lint-fix; $(MAKE) check-types
+
 code-analysis-cc:
 	uv run radon cc $(SRC_DIR) -a -s
 
@@ -43,6 +46,7 @@ DOCKER_COMPOSE_COMMAND_DEV=\
 up:
 	$(DOCKER_COMPOSE_COMMAND_DEV) up api --build $(ARGS)
 
+# make down ARGS=-v to clean docker volumes
 down:
 	$(DOCKER_COMPOSE_COMMAND_DEV) down $(ARGS)
 
@@ -77,9 +81,7 @@ run-sql:
 # Waits for Postgres to be ready, and executes pg_restore
 # Stops the Postgres container; and relaunches a new container
 # without the backup directory mounted in the background
-DB_DUMP_PATH=
-
-load-database-backup:
+load-db-dump:
 	$(DOCKER_COMPOSE_COMMAND_DEV) down --volumes
 	$(DOCKER_COMPOSE_COMMAND_DEV) run --rm --name pg-backup -d -v $(DB_DUMP_PATH):/db-dump postgres
 
@@ -122,20 +124,27 @@ test-access-postgres:
 
 help:
 	@echo "Available commands:"
-	@echo "  make requirements         - Export production dependencies to requirements.txt"
-	@echo "  make requirements-dev     - Export development dependencies to requirements-dev.txt"
-	@echo "  make format               - Format code with ruff"
-	@echo "  make lint                 - Check code with ruff"
-	@echo "  make lint-fix             - Fix linting issues with ruff"
-	@echo "  make check-types          - Check types with mypy"
-	@echo "  make up                   - Start containers"
-	@echo "  make down                 - Stop containers"
-	@echo "  make alembic-new MSG=..   - Create new Alembic migration (autogenerate)"
-	@echo "  make alembic-upgrade      - Upgrade Alembic to head"
-	@echo "  make postgres-up          - Start only Postgres container"
-	@echo "  make postgres-down        - Stop only Postgres container"
-	@echo "  make access-postgres      - Access Postgres container with psql"
-	@echo "  make run-sql              - Run SQL file and get CSV output"
-	@echo "  make load-database-backup - Load database backup from SQL file"
-	@echo "  make test                 - Run tests in a test container"
-	@echo "  make help                 - Show this help message"
+	@echo "  make requirements                 - Export production dependencies to requirements.txt"
+	@echo "  make requirements-dev             - Export development dependencies to requirements-dev.txt"
+	@echo "  make format                       - Format code with ruff"
+	@echo "  make lint                         - Check code with ruff"
+	@echo "  make lint-fix                     - Fix linting issues with ruff"
+	@echo "  make check-types                  - Check types with mypy"
+	@echo "  make code-cleanup                 - Run format, lint-fix and check-types at once"
+	@echo "  make code-analysis-cc             - Run cyclomatic complexity analysis with radon"
+	@echo "  make code-analysis-metrics        - Run code metrics analysis with radon"
+	@echo "  make precommit-install            - Install pre-commit hooks"
+	@echo "  make up                           - Start containers"
+	@echo "  make down                         - Stop containers"
+	@echo "  make alembic-new MSG=..           - Create new Alembic migration (autogenerate)"
+	@echo "  make alembic-upgrade              - Upgrade Alembic to head"
+	@echo "  make postgres-up                  - Start only Postgres container"
+	@echo "  make postgres-down                - Stop only Postgres container"
+	@echo "  make access-postgres              - Access Postgres container with psql"
+	@echo "  make run-sql SQL_FILE=..          - Run SQL file and get CSV output"
+	@echo "  make load-db-dump DB_DUMP_PATH=.. - Load database backup from SQL file"
+	@echo "  make test                         - Run tests in a test container"
+	@echo "  make test-down                    - Stop and remove test containers"
+	@echo "  make test-with-cleanup            - Run tests and then clean up containers"
+	@echo "  make test-access-postgres         - Access test Postgres container with psql"
+	@echo "  make help                         - Show this help message"
