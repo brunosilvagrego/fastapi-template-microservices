@@ -29,6 +29,9 @@ code-analysis-cc:
 code-analysis-metrics:
 	uv run radon raw $(SRC_DIR) -s
 
+precommit-install:
+	uv run pre-commit install
+
 # Backend #
 
 DOCKER_COMPOSE_COMMAND_DEV=\
