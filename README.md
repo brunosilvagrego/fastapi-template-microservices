@@ -3,12 +3,6 @@
 Template for building scalable microservices with FastAPI and modern
 Python (3.14+).
 
-This template was inspired by the following repos:
-
-- [fastapi/full-stack-fastapi-template](https://github.com/Kludex/fastapi-microservices)
-- [Kludex/fastapi-microservices](https://github.com/Kludex/fastapi-microservices)
-- [adr1enbe4udou1n/fastapi-realworld-example-app](https://github.com/adr1enbe4udou1n/fastapi-realworld-example-app)
-
 ## Features
 
 - ⚡ Backend development with `FastAPI`
@@ -131,6 +125,14 @@ The project uses a `Makefile` to simplify common development tasks:
 ├── Makefile
 └── pyproject.toml
 ```
+
+## References
+
+This template was inspired by the following repos:
+
+- [fastapi/full-stack-fastapi-template](https://github.com/Kludex/fastapi-microservices)
+- [Kludex/fastapi-microservices](https://github.com/Kludex/fastapi-microservices)
+- [adr1enbe4udou1n/fastapi-realworld-example-app](https://github.com/adr1enbe4udou1n/fastapi-realworld-example-app)
 
 ## License
 
