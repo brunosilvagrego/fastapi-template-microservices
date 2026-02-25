@@ -11,6 +11,9 @@ requirements:
 requirements-dev:
 	uv export --format requirements-txt > $(SRC_DIR)/requirements-dev.txt
 
+requirements-all:
+	$(MAKE) requirements; $(MAKE) requirements-dev
+
 format:
 	uv run ruff format $(SRC_DIR)
 
@@ -126,6 +129,7 @@ help:
 	@echo "Available commands:"
 	@echo "  make requirements                 - Export production dependencies to requirements.txt"
 	@echo "  make requirements-dev             - Export development dependencies to requirements-dev.txt"
+	@echo "  make requirements-all             - Export both production and development dependencies"
 	@echo "  make format                       - Format code with ruff"
 	@echo "  make lint                         - Check code with ruff"
 	@echo "  make lint-fix                     - Fix linting issues with ruff"
