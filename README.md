@@ -40,7 +40,7 @@ Some features are project-specific and therefore left out:
 - Identity providers (Auth0, Keycloak, etc.)
 - Deployment pipelines
 
-### Note on Authentication
+### Authentication
 
 Designed primarily for service-to-service (M2M) communication using
 [Oauth Client Credentials flow](https://oauth.net/2/grant-types/client-credentials/).
