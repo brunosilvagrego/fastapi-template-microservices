@@ -1,6 +1,6 @@
 import pytest
-from httpx import AsyncClient
 from fastapi import status
+from httpx import AsyncClient
 
 API_ITEMS_ENDPOINT = "/api/v1/items"
 API_ITEM_ID_ENDPOINT = "/api/v1/items/{id}"
@@ -10,7 +10,7 @@ NONEXISTENT_ITEM_ID = 9999
 
 async def create_new_item(
     client: AsyncClient,
-        title: str,
+    title: str,
     description: str,
 ) -> dict:
     response = await client.post(
