@@ -1,7 +1,7 @@
 # FastAPI Microservices Template
 
 Template for building scalable microservices with FastAPI and modern
-Python (3.14+).
+Python (3.14).
 
 ## Features
 
