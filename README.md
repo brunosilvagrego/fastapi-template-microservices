@@ -17,6 +17,27 @@ Python (3.14).
 - 🧰 `Makefile` for common tasks
 - 🔒 Optional `pre-commit` hooks
 
+## Project Structure
+
+```text
+.
+├── backend/
+│   ├── app/           # Main application code
+│   │   ├── api/       # API endpoints
+│   │   ├── core/      # Configuration, security, utils
+│   │   ├── models/    # SQLAlchemy models
+│   │   ├── schemas/   # Pydantic schemas
+│   │   └── services/  # Business logic layer
+│   ├── docker/        # Docker files
+│   ├── migrations/    # Alembic migrations
+│   ├── scripts/       # Startup and initialization scripts
+│   └── tests/         # Pytest suite
+├── docker-compose.yaml
+├── docker-compose.test.yaml
+├── Makefile
+└── pyproject.toml
+```
+
 ## Goals
 
 It is a simple yet opinionated starter project that aims to provide:
@@ -117,27 +138,6 @@ Update requirements files:
 
 ```bash
 make requirements-all
-```
-
-## Project Structure
-
-```text
-.
-├── backend/
-│   ├── app/           # Main application code
-│   │   ├── api/       # API endpoints
-│   │   ├── core/      # Configuration, security, utils
-│   │   ├── models/    # SQLAlchemy models
-│   │   ├── schemas/   # Pydantic schemas
-│   │   └── services/  # Business logic layer
-│   ├── docker/        # Docker files
-│   ├── migrations/    # Alembic migrations
-│   ├── scripts/       # Startup and initialization scripts
-│   └── tests/         # Pytest suite
-├── docker-compose.yaml
-├── docker-compose.test.yaml
-├── Makefile
-└── pyproject.toml
 ```
 
 ## References
