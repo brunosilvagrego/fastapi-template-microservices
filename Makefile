@@ -135,6 +135,7 @@ DOCKER_COMPOSE_COMMAND_TEST=\
 test:
 	$(DOCKER_COMPOSE_COMMAND_TEST) run --rm --build --remove-orphans \
 	$(MAIN_SERVICE_NAME) bash -c "alembic upgrade head && \
+	python3 /src/scripts/initial_data.py && \
 	pytest /src/tests --cov=app --cov-report=term-missing --cov-report=html \
 	$(ARGS)"
 
