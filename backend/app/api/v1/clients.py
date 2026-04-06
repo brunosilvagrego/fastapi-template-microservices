@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import (
+from app.core.deps import (
     get_client_by_id,
     get_current_admin_client,
     get_db_session,

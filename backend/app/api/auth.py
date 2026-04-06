@@ -4,8 +4,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db_session
 from app.core.config import settings
+from app.core.deps import get_db_session
 from app.core.security import (
     OAuth2ClientCredentialsRequestForm,
     authenticate_client,
