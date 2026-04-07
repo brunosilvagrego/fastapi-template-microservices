@@ -13,8 +13,8 @@ from app.core.security import oauth2_scheme
 from app.models.clients import Client
 from app.models.items import Item
 from app.schemas.token import TokenData
-from app.services import items as service_items
 from app.services.clients import service_client
+from app.services.items import service_item
 
 EXPIRED_JWT = "Expired JWT"
 INVALID_JWT = "Invalid JWT"
@@ -125,7 +125,7 @@ async def get_item_by_id(
     client: Client = Depends(get_current_client),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> Item:
-    item = await service_items.get(db_session, id, owner_id=client.id)
+    item = await service_item.get(db_session, id=id, owner_id=client.id)
 
     if item is None:
         raise HTTPException(

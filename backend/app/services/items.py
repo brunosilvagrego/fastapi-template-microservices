@@ -1,61 +1,46 @@
-from collections.abc import Sequence
-
-from sqlalchemy import select
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Item
+from app.models.clients import Client
+from app.models.items import Item
+from app.schemas.items import ItemCreate, ItemCreatePrivate, ItemUpdate
+from app.services.crud import CRUDBase
 
 
-async def create(
-    db_session: AsyncSession,
-    title: str,
-    description: str,
-    owner_id: int,
-) -> Item:
-    item = Item(title=title, description=description, owner_id=owner_id)
+class ItemService(CRUDBase[Item, ItemCreatePrivate, ItemUpdate]):
+    async def new(
+        self,
+        db_session: AsyncSession,
+        client: Client,
+        create_schema: ItemCreate,
+    ) -> Item:
+        return await self.create(
+            db_session,
+            ItemCreatePrivate(
+                **create_schema.model_dump(),
+                owner_id=client.id,
+            ),
+        )
 
-    db_session.add(item)
-    await db_session.commit()
-    await db_session.refresh(item)
+    async def update_check(
+        self,
+        db_session,
+        item: Item,
+        update_schema: ItemUpdate,
+    ) -> Item:
+        updated_item = await self.update(
+            db_session,
+            db_object=item,
+            update_schema=update_schema,
+        )
 
-    return item
+        if updated_item is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update item.",
+            )
 
-
-async def get(db_session: AsyncSession, id: int, owner_id: int) -> Item | None:
-    stmt = select(Item).where(Item.id == id, Item.owner_id == owner_id)
-    result = await db_session.execute(stmt)
-
-    return result.scalar_one_or_none()
-
-
-async def get_all(db_session: AsyncSession, owner_id: int) -> Sequence[Item]:
-    stmt = select(Item).where(Item.owner_id == owner_id)
-    result = await db_session.execute(stmt)
-
-    return result.scalars().all()
-
-
-async def update(
-    db_session: AsyncSession,
-    item: Item,
-    title: str | None = None,
-    description: str | None = None,
-) -> Item:
-    if all(param is None for param in (title, description)):
-        return item
-
-    if title is not None:
-        item.title = title
-
-    if description is not None:
-        item.description = description
-
-    await db_session.commit()
-    await db_session.refresh(item)
-
-    return item
+        return updated_item
 
 
-async def delete(db_session: AsyncSession, item: Item) -> None:
-    await db_session.delete(item)
-    await db_session.commit()
+service_item = ItemService(Item)

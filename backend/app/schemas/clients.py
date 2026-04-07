@@ -16,12 +16,15 @@ class ClientBase(BaseModel):
 class ClientCreate(BaseModel):
     name: str
     is_admin: bool = False
+
     model_config = ConfigDict(extra="forbid")
 
 
 class ClientCreatePrivate(ClientCreate):
     oauth_id: str
     oauth_secret_hash: str
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class ClientCreateResponse(ClientBase):
@@ -38,12 +41,16 @@ class ClientUpdate(BaseModel):
     is_admin: bool | None = None
     regenerate_credentials: bool = False
 
+    model_config = ConfigDict(extra="forbid")
+
 
 class ClientUpdatePrivate(BaseModel):
     name: str | None = None
     is_admin: bool | None = None
     oauth_id: str | None = None
     oauth_secret_hash: str | None = None
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class ClientUpdateResponse(ClientBase):
