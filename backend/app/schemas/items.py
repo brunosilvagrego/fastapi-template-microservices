@@ -1,4 +1,4 @@
-from app.schemas.base import BaseModel
+from app.schemas.base import BaseModel, NonEmptyModel
 
 
 class ItemSchema(BaseModel):
@@ -12,6 +12,6 @@ class ItemCreate(BaseModel):
     description: str
 
 
-class ItemUpdate(BaseModel):
+class ItemUpdate(NonEmptyModel):
     title: str | None = None
     description: str | None = None

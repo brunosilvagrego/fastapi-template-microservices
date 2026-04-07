@@ -199,7 +199,6 @@ async def test_update_item(
         ("Item A", None),
         (None, "abc"),
         ("Item B", "def"),
-        (None, None),
     ):
         updated_data = await update_item(
             client=external_client,

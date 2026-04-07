@@ -7,7 +7,8 @@ from app.core.consts import Environment
 from app.core.database import SessionManager
 from app.core.logging_config import setup_logging
 from app.core.security import get_password_hash
-from app.services import clients as service_clients
+from app.schemas.clients import ClientCreatePrivate
+from app.services.clients import service_client
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -18,7 +19,12 @@ async def create_users():
     logger.info(f"Running initial data script for environment: {env}")
 
     async with SessionManager() as db_session:
-        clients = await service_clients.get_all(db_session)
+        clients = await service_client.get_many(
+            db_session,
+            page=1,
+            per_page=100,
+            active=False,
+        )
 
         if clients:
             logger.info(
@@ -26,24 +32,30 @@ async def create_users():
             )
             return
 
-        await service_clients.create(
-            db_session=db_session,
-            name=settings.ADMIN_CLIENT_NAME,
-            oauth_id=settings.ADMIN_CLIENT_ID,
-            oauth_secret_hash=get_password_hash(settings.ADMIN_CLIENT_SECRET),
-            is_admin=True,
+        await service_client.create(
+            db_session,
+            create_schema=ClientCreatePrivate(
+                name=settings.ADMIN_CLIENT_NAME,
+                is_admin=True,
+                oauth_id=settings.ADMIN_CLIENT_ID,
+                oauth_secret_hash=get_password_hash(
+                    settings.ADMIN_CLIENT_SECRET
+                ),
+            ),
         )
         logger.info("Admin client created.")
 
         if env in (Environment.DEVELOPMENT, Environment.TESTING):
-            await service_clients.create(
-                db_session=db_session,
-                name=settings.EXTERNAL_CLIENT_NAME,
-                oauth_id=settings.EXTERNAL_CLIENT_ID,
-                oauth_secret_hash=get_password_hash(
-                    settings.EXTERNAL_CLIENT_SECRET
+            await service_client.create(
+                db_session,
+                create_schema=ClientCreatePrivate(
+                    name=settings.EXTERNAL_CLIENT_NAME,
+                    is_admin=False,
+                    oauth_id=settings.EXTERNAL_CLIENT_ID,
+                    oauth_secret_hash=get_password_hash(
+                        settings.EXTERNAL_CLIENT_SECRET
+                    ),
                 ),
-                is_admin=False,
             )
             logger.info("External client created.")
 

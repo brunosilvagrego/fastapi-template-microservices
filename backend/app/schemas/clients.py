@@ -1,9 +1,11 @@
 from datetime import datetime
 
+from pydantic import ConfigDict
+
 from app.schemas.base import BaseModel
 
 
-class ClientSchema(BaseModel):
+class ClientBase(BaseModel):
     id: int
     name: str
     created_at: datetime
@@ -14,11 +16,21 @@ class ClientSchema(BaseModel):
 class ClientCreate(BaseModel):
     name: str
     is_admin: bool = False
+    model_config = ConfigDict(extra="forbid")
 
 
-class ClientCreateResponse(ClientSchema):
+class ClientCreatePrivate(ClientCreate):
+    oauth_id: str
+    oauth_secret_hash: str
+
+
+class ClientCreateResponse(ClientBase):
     client_id: str
     client_secret: str
+
+
+class ClientRead(ClientBase):
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ClientUpdate(BaseModel):
@@ -27,6 +39,13 @@ class ClientUpdate(BaseModel):
     regenerate_credentials: bool = False
 
 
-class ClientUpdateResponse(ClientSchema):
+class ClientUpdatePrivate(BaseModel):
+    name: str | None = None
+    is_admin: bool | None = None
+    oauth_id: str | None = None
+    oauth_secret_hash: str | None = None
+
+
+class ClientUpdateResponse(ClientBase):
     client_id: str | None = None
     client_secret: str | None = None

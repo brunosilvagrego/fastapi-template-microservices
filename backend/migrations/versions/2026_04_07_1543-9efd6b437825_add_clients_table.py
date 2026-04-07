@@ -1,8 +1,8 @@
-"""Add client table
+"""Add clients table
 
-Revision ID: cdf9cf7ec66d
+Revision ID: 9efd6b437825
 Revises:
-Create Date: 2026-02-13 18:49:59.038080
+Create Date: 2026-04-07 15:43:02.186372
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "cdf9cf7ec66d"
+revision: str = "9efd6b437825"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -21,21 +21,19 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """Upgrade schema."""
     op.create_table(
-        "client",
-        sa.Column("id", sa.Integer(), nullable=False),
+        "clients",
+        sa.Column("id", sa.BigInteger(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("is_admin", sa.Boolean(), nullable=False),
         sa.Column("oauth_id", sa.String(), nullable=False),
         sa.Column("oauth_secret_hash", sa.String(), nullable=False),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_client")),
-        sa.UniqueConstraint("oauth_id", name=op.f("uq_client_oauth_id")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_clients")),
+        sa.UniqueConstraint("oauth_id", name=op.f("uq_clients_oauth_id")),
     )
-    op.create_index(op.f("ix_client_id"), "client", ["id"], unique=True)
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_index(op.f("ix_client_id"), table_name="client")
-    op.drop_table("client")
+    op.drop_table("clients")

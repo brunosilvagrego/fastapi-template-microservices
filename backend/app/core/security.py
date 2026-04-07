@@ -8,13 +8,10 @@ from fastapi.openapi.models import OAuthFlowClientCredentials, OAuthFlows
 from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
 from pwdlib import PasswordHash
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.core import utils
 from app.core.config import settings
-from app.models import Client
-from app.services import clients as service_clients
 
 
 class Oauth2ClientCredentials(OAuth2):
@@ -91,25 +88,6 @@ def new_client_credentials() -> tuple[str, str, str]:
     client_id, client_secret = generate_oauth_client_credentials()
     client_secret_hash = get_password_hash(client_secret)
     return client_id, client_secret, client_secret_hash
-
-
-async def authenticate_client(
-    db_session: AsyncSession,
-    client_id: str | None,
-    client_secret: str | None,
-) -> Client | None:
-    if client_id is None or client_secret is None:
-        return None
-
-    client = await service_clients.get_by_oauth_id(db_session, client_id)
-
-    if client is None:
-        return None
-
-    if not verify_password(client_secret, client.oauth_secret_hash):
-        return None
-
-    return client
 
 
 def create_access_token(data: dict) -> str:
