@@ -1,6 +1,8 @@
 from fastapi import status
 from httpx import AsyncClient
 
+NONEXISTENT_ID = 999_999_999
+
 
 def get_auth_request_data(client_id: str, client_secret: str) -> dict[str, str]:
     return {

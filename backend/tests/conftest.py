@@ -58,13 +58,13 @@ def client_factory():
 
 
 @pytest.fixture()
-async def client(client_factory):
+async def http_client(client_factory):
     async with await client_factory() as client:
         yield client
 
 
 @pytest.fixture
-async def admin_client(client_factory):
+async def http_client_admin(client_factory):
     async with await client_factory() as client:
         authenticated_client = await make_authenticated_client(
             client=client,
@@ -75,7 +75,7 @@ async def admin_client(client_factory):
 
 
 @pytest.fixture
-async def external_client(client_factory):
+async def http_client_external(client_factory):
     async with await client_factory() as client:
         authenticated_client = await make_authenticated_client(
             client=client,

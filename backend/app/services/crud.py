@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from pydantic import BaseModel
-from sqlalchemy import select, update
+from sqlalchemy import UnaryExpression, asc, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
@@ -56,15 +56,24 @@ class CRUDBase[
         *args,
         page: int = 1,
         per_page: int = 100,
+        order_by: list[UnaryExpression] | None = None,
         **kwargs,
     ) -> Sequence[ModelType]:
-        result = await db_session.execute(
+        query = (
             select(self._model)
             .filter(*args)
             .filter_by(**kwargs)
             .offset((page - 1) * per_page)
             .limit(per_page)
         )
+
+        if order_by is None and hasattr(self._model, "id"):
+            order_by = [asc(self._model.id)]  # type: ignore[attr-defined]
+
+        if order_by is not None:
+            query = query.order_by(*order_by)
+
+        result = await db_session.execute(query)
         return result.scalars().all()
 
     async def update(

@@ -9,11 +9,11 @@ NONEXISTENT_ITEM_ID = 9999
 
 
 async def create_new_item(
-    client: AsyncClient,
+    http_client: AsyncClient,
     title: str,
     description: str,
 ) -> dict:
-    response = await client.post(
+    response = await http_client.post(
         API_ITEMS_ENDPOINT,
         json={"title": title, "description": description},
     )
@@ -39,11 +39,11 @@ def check_item_data(
 
 
 async def get_item(
-    client: AsyncClient,
+    http_client: AsyncClient,
     item_id: int,
     expected_status: status = status.HTTP_200_OK,
 ) -> dict | None:
-    response = await client.get(API_ITEM_ID_ENDPOINT.format(id=item_id))
+    response = await http_client.get(API_ITEM_ID_ENDPOINT.format(id=item_id))
     assert response.status_code == expected_status
 
     if expected_status != status.HTTP_200_OK:
@@ -53,7 +53,7 @@ async def get_item(
 
 
 async def update_item(
-    client: AsyncClient,
+    http_client: AsyncClient,
     item_id: int,
     title: str | None = None,
     description: bool | None = None,
@@ -65,7 +65,7 @@ async def update_item(
         if value is not None:
             update_data[key] = value
 
-    response = await client.patch(
+    response = await http_client.patch(
         url=API_ITEM_ID_ENDPOINT.format(id=item_id),
         json=update_data,
     )
@@ -87,34 +87,30 @@ async def delete_item(
 
 
 @pytest.mark.anyio
-async def test_create_item(external_client: AsyncClient) -> None:
+async def test_create_item(http_client_external: AsyncClient) -> None:
     title = "Item 1"
     description = DEFAULT_DESCRIPTION
 
-    new_data = await create_new_item(
-        client=external_client,
-        title=title,
-        description=description,
-    )
+    new_data = await create_new_item(http_client_external, title, description)
     check_item_data(new_data, title, description)
 
-    data = await get_item(external_client, new_data["id"])
+    data = await get_item(http_client_external, new_data["id"])
     check_item_data(data, title, description)
 
 
 @pytest.mark.anyio
 async def test_get_items(
-    external_client: AsyncClient,
-    admin_client: AsyncClient,
+    http_client_external: AsyncClient,
+    http_client_admin: AsyncClient,
 ) -> None:
     for i in range(2, 4):
         await create_new_item(
-            client=external_client,
+            http_client_external,
             title=f"Item {i}",
             description=DEFAULT_DESCRIPTION,
         )
 
-    response = await external_client.get(API_ITEMS_ENDPOINT)
+    response = await http_client_external.get(API_ITEMS_ENDPOINT)
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -125,7 +121,7 @@ async def test_get_items(
         check_item_data(item_data)
 
     # User with no items
-    response = await admin_client.get(API_ITEMS_ENDPOINT)
+    response = await http_client_admin.get(API_ITEMS_ENDPOINT)
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -135,14 +131,14 @@ async def test_get_items(
 
 @pytest.mark.anyio
 async def test_get_item_by_id(
-    external_client: AsyncClient,
-    admin_client: AsyncClient,
+    http_client_external: AsyncClient,
+    http_client_admin: AsyncClient,
 ) -> None:
     title = "Item 10"
     description = DEFAULT_DESCRIPTION
 
     original_data = await create_new_item(
-        client=external_client,
+        http_client_external,
         title=title,
         description=description,
     )
@@ -158,7 +154,7 @@ async def test_get_item_by_id(
         )
 
         data = await get_item(
-            client=external_client,
+            http_client_external,
             item_id=test_id,
             expected_status=expected_status,
         )
@@ -169,7 +165,7 @@ async def test_get_item_by_id(
 
     # Try to get an item of another user
     await get_item(
-        client=admin_client,
+        http_client_admin,
         item_id=item_id,
         expected_status=status.HTTP_404_NOT_FOUND,
     )
@@ -177,15 +173,15 @@ async def test_get_item_by_id(
 
 @pytest.mark.anyio
 async def test_update_item(
-    external_client: AsyncClient,
-    admin_client: AsyncClient,
+    http_client_external: AsyncClient,
+    http_client_admin: AsyncClient,
 ) -> None:
     title = "Item 100"
     new_title = "Item C"
     description = DEFAULT_DESCRIPTION
 
     original_data = await create_new_item(
-        client=external_client,
+        http_client_external,
         title=title,
         description=description,
     )
@@ -201,7 +197,7 @@ async def test_update_item(
         ("Item B", "def"),
     ):
         updated_data = await update_item(
-            client=external_client,
+            http_client_external,
             item_id=item_id,
             title=title,
             description=description,
@@ -215,14 +211,14 @@ async def test_update_item(
 
         check_item_data(updated_data, title, description)
 
-        data = await get_item(external_client, item_id)
+        data = await get_item(http_client_external, item_id)
         check_item_data(data, title, description)
 
         last_data = data
 
     # Try to update a nonexistent item
     await update_item(
-        client=external_client,
+        http_client_external,
         item_id=NONEXISTENT_ITEM_ID,
         title=new_title,
         description=DEFAULT_DESCRIPTION,
@@ -231,7 +227,7 @@ async def test_update_item(
 
     # Try to update an item of another user
     await update_item(
-        client=admin_client,
+        http_client_admin,
         item_id=item_id,
         title=new_title,
         description=DEFAULT_DESCRIPTION,
@@ -241,20 +237,20 @@ async def test_update_item(
 
 @pytest.mark.anyio
 async def test_delete_item(
-    external_client: AsyncClient,
-    admin_client: AsyncClient,
+    http_client_external: AsyncClient,
+    http_client_admin: AsyncClient,
 ) -> None:
     items_to_delete = []
 
     for i in range(4, 6):
         new_data = await create_new_item(
-            client=external_client,
+            http_client_external,
             title=f"Item {i}",
             description=DEFAULT_DESCRIPTION,
         )
         items_to_delete.append(new_data)
 
-        data = await get_item(external_client, new_data["id"])
+        data = await get_item(http_client_external, new_data["id"])
         check_item_data(data)
 
     for item in items_to_delete:
@@ -262,35 +258,35 @@ async def test_delete_item(
 
         # Try to delete an item of another user
         await delete_item(
-            client=admin_client,
+            http_client_admin,
             item_id=item_id,
             expected_status=status.HTTP_404_NOT_FOUND,
         )
 
         # Delete item
         await delete_item(
-            client=external_client,
+            http_client_external,
             item_id=item_id,
             expected_status=status.HTTP_204_NO_CONTENT,
         )
 
         # Item not found
         await get_item(
-            client=external_client,
+            http_client_external,
             item_id=item_id,
             expected_status=status.HTTP_404_NOT_FOUND,
         )
 
         # Not possible to delete the same item twice
         await delete_item(
-            client=external_client,
+            http_client_external,
             item_id=item_id,
             expected_status=status.HTTP_404_NOT_FOUND,
         )
 
     # Try to delete a nonexistent item
     await delete_item(
-        client=external_client,
+        http_client_external,
         item_id=NONEXISTENT_ITEM_ID,
         expected_status=status.HTTP_404_NOT_FOUND,
     )
