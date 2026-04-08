@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 from app.schemas.base import BaseModel
 
@@ -14,7 +14,7 @@ class ClientBase(BaseModel):
 
 
 class ClientCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     is_admin: bool = False
 
     model_config = ConfigDict(extra="forbid")
@@ -37,7 +37,7 @@ class ClientRead(ClientBase):
 
 
 class ClientUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1)
     is_admin: bool | None = None
     regenerate_credentials: bool = False
 
@@ -45,7 +45,7 @@ class ClientUpdate(BaseModel):
 
 
 class ClientUpdatePrivate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1)
     is_admin: bool | None = None
     oauth_id: str | None = None
     oauth_secret_hash: str | None = None

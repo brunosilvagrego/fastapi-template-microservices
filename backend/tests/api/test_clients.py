@@ -7,7 +7,7 @@ from fastapi import status
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.utils import NONEXISTENT_ID
+from tests import utils
 
 API_CLIENTS_ENDPOINT = "/api/v1/clients"
 API_CLIENT_ID_ENDPOINT = "/api/v1/clients/{id}"
@@ -42,8 +42,8 @@ async def check_client_data(
 ) -> None:
     assert isinstance(client_data, dict)
 
-    client_id = client_data.get("id")
-    assert isinstance(client_id, int)
+    id = client_data.get("id")
+    assert isinstance(id, int)
 
     name = client_data.get("name")
     assert isinstance(name, str)
@@ -71,7 +71,7 @@ async def check_client_data(
         assert client_oauth_id is None
         assert client_oauth_secret is None
 
-    db_client = await service_client.get(db_session, id=client_id)
+    db_client = await service_client.get(db_session, id=id)
     assert db_client is not None
     assert db_client.name == expected_name
     assert db_client.is_admin == expected_is_admin
@@ -95,6 +95,7 @@ async def check_clients_list(
             client_data=client_data,
             expected_name=expected_client.name,
             expected_is_admin=expected_client.is_admin,
+            deleted=expected_client.deleted_at is not None,
         )
 
 
@@ -103,7 +104,7 @@ async def create_new_client(
     name: str,
     is_admin: bool,
     expected_status: status = status.HTTP_201_CREATED,
-) -> dict:
+) -> dict | None:
     response = await http_client.post(
         API_CLIENTS_ENDPOINT,
         json={"name": name, "is_admin": is_admin},
@@ -137,7 +138,7 @@ async def update_client(
     is_admin: bool | None = None,
     regenerate_credentials: bool | None = None,
     expected_status: status = status.HTTP_200_OK,
-) -> dict:
+) -> dict | None:
     update_data = {}
 
     for key, value in (
@@ -170,7 +171,7 @@ async def delete_client(
 
 
 @pytest.mark.anyio
-async def test_no_credentials(http_client: AsyncClient) -> None:
+async def test_client_endpoints_no_credentials(http_client: AsyncClient) -> None:
     await check_endpoints_access(
         http_client,
         headers={},
@@ -179,16 +180,25 @@ async def test_no_credentials(http_client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
-async def test_invalid_token(http_client: AsyncClient) -> None:
+async def test_client_endpoints_invalid_token(http_client: AsyncClient) -> None:
     await check_endpoints_access(
         http_client,
-        headers={"Authorization": "Bearer invalid_token"},
+        headers=utils.get_auth_header_invalid_token(),
         expected_status=status.HTTP_401_UNAUTHORIZED,
     )
 
 
 @pytest.mark.anyio
-async def test_external_client_access(
+async def test_client_endpoints_expired_token(http_client: AsyncClient) -> None:
+    await check_endpoints_access(
+        http_client,
+        headers=utils.get_auth_header_expired_token(),
+        expected_status=status.HTTP_401_UNAUTHORIZED,
+    )
+
+
+@pytest.mark.anyio
+async def test_client_endpoints_external_access(
     http_client_external: AsyncClient,
 ) -> None:
     await check_endpoints_access(
@@ -198,33 +208,45 @@ async def test_external_client_access(
     )
 
 
-# TODO: test 422 for invalid request data
 @pytest.mark.anyio
 @pytest.mark.parametrize(
-    "name,is_admin",
+    "name,is_admin,expected_status",
     [
-        ("Service A", True),
-        ("Service B", False),
+        ("Service B", True, status.HTTP_201_CREATED),
+        ("Service C", False, status.HTTP_201_CREATED),
+        ("", True, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (None, True, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        ("Service D", None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (5, True, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        ("Service D", 5, status.HTTP_422_UNPROCESSABLE_CONTENT),
     ],
 )
 async def test_create_client(
     db_session: AsyncSession,
     http_client_admin: AsyncClient,
-    name: str,
-    is_admin: bool,
+    name: str | int | None,
+    is_admin: bool | int | None,
+    expected_status: status,
 ) -> None:
-    client_data = await create_new_client(http_client_admin, name, is_admin)
-    await check_client_data(
-        db_session,
-        client_data,
+    client_data = await create_new_client(
+        http_client_admin,
         name,
         is_admin,
-        credentials=True,
+        expected_status,
     )
+
+    if expected_status == status.HTTP_201_CREATED:
+        await check_client_data(
+            db_session,
+            client_data,
+            name,
+            is_admin,
+            credentials=True,
+        )
 
 
 @pytest.mark.anyio
-async def test_get_clients(
+async def test_list_clients(
     db_session: AsyncSession,
     http_client_admin: AsyncClient,
 ) -> None:
@@ -238,19 +260,22 @@ async def test_get_clients(
     response = await http_client_admin.get(API_CLIENTS_ENDPOINT)
     assert response.status_code == status.HTTP_200_OK
 
+    # Check initial clients list
     await check_clients_list(
         db_session,
         clients_data=response.json(),
         expected_clients=expected_clients,
     )
 
-    new_client = await service_client.new(
+    # Check list after adding a new client
+    client_schema = await service_client.new(
         db_session,
         create_schema=ClientCreate(
-            name="Service A",
+            name="Service B",
             is_admin=False,
         ),
     )
+    new_client = await service_client.get(db_session, id=client_schema.id)
     assert new_client is not None
     expected_clients.append(new_client)
 
@@ -263,138 +288,170 @@ async def test_get_clients(
         expected_clients=expected_clients,
     )
 
+    # Check list after deactivating a client
+    await service_client.deactivate(db_session, client=new_client)
+    expected_clients.pop()
 
-# TODO: test get after create
+    response = await http_client_admin.get(API_CLIENTS_ENDPOINT)
+    assert response.status_code == status.HTTP_200_OK
+
+    await check_clients_list(
+        db_session,
+        clients_data=response.json(),
+        expected_clients=expected_clients,
+    )
+
+    response = await http_client_admin.get(
+        API_CLIENTS_ENDPOINT,
+        params={"active_only": False},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    expected_clients.append(new_client)
+
+    await check_clients_list(
+        db_session,
+        clients_data=response.json(),
+        expected_clients=expected_clients,
+    )
+
+
 @pytest.mark.anyio
 @pytest.mark.parametrize(
-    "id,expected_name,expected_is_admin,expected_status",
+    "id,expected_name,expected_is_admin",
     [
-        (1, settings.ADMIN_CLIENT_NAME, True, status.HTTP_200_OK),
-        (2, settings.EXTERNAL_CLIENT_NAME, False, status.HTTP_200_OK),
-        (NONEXISTENT_ID, None, None, status.HTTP_404_NOT_FOUND),
-        ("invalid_id", None, None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (1, settings.ADMIN_CLIENT_NAME, True),
+        (2, settings.EXTERNAL_CLIENT_NAME, False),
     ],
 )
-async def test_get_client_by_id(
+async def test_get_client(
     db_session: AsyncSession,
     http_client_admin: AsyncClient,
-    id: int,
+    id: int | str,
     expected_name: str,
     expected_is_admin: bool,
+) -> None:
+    client_data = await get_client(http_client_admin, id)
+
+    await check_client_data(
+        db_session,
+        client_data,
+        expected_name,
+        expected_is_admin,
+    )
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "id,name,is_admin,regenerate_credentials,expected_status",
+    [
+        (2, "Service B", None, None, status.HTTP_200_OK),
+        (2, None, True, None, status.HTTP_200_OK),
+        (2, None, False, None, status.HTTP_200_OK),
+        (2, None, None, True, status.HTTP_200_OK),
+        (2, "Service C", True, True, status.HTTP_200_OK),
+        (2, "", True, True, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (2, "Service D", 5, True, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (2, "Service D", True, 5, status.HTTP_422_UNPROCESSABLE_CONTENT),
+    ],
+)
+async def test_update_client(
+    db_session: AsyncSession,
+    http_client_admin: AsyncClient,
+    id: int | str,
+    name: str | None,
+    is_admin: bool | None,
+    regenerate_credentials: bool | None,
     expected_status: status,
 ) -> None:
-    client_data = await get_client(http_client_admin, id, expected_status)
+    updated_data = await update_client(
+        http_client_admin,
+        id,
+        name,
+        is_admin,
+        regenerate_credentials,
+        expected_status,
+    )
 
     if expected_status == status.HTTP_200_OK:
         await check_client_data(
             db_session,
-            client_data,
-            expected_name,
-            expected_is_admin,
+            client_data=updated_data,
+            expected_name=name or settings.EXTERNAL_CLIENT_NAME,
+            expected_is_admin=is_admin or False,
+            credentials=regenerate_credentials,
         )
 
 
-# @pytest.mark.anyio
-# async def test_update_client(http_client_admin: AsyncClient) -> None:
-#     name = "Service D"
-#     is_admin = False
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "name,is_admin",
+    [
+        ("Admin Service to Delete", True),
+        ("Service to Delete", False),
+    ],
+)
+async def test_delete_client(
+    db_session: AsyncSession,
+    http_client_admin: AsyncClient,
+    name: str | None,
+    is_admin: bool | None,
+) -> None:
+    client_schema = await service_client.new(
+        db_session,
+        create_schema=ClientCreate(
+            name=name,
+            is_admin=is_admin,
+        ),
+    )
+    assert client_schema is not None
 
-#     original_data = await create_new_client(
-#         client=http_client_admin,
-#         name=name,
-#         is_admin=is_admin,
-#     )
-#     check_client_data(original_data, name, is_admin, credentials=True)
+    await get_client(
+        http_client_admin,
+        id=client_schema.id,
+        expected_status=status.HTTP_200_OK,
+    )
 
-#     id = original_data["id"]
+    await delete_client(
+        http_client_admin,
+        id=client_schema.id,
+        expected_status=status.HTTP_204_NO_CONTENT,
+    )
 
-#     # Update name
-#     new_name = "Updated Service"
+    await get_client(
+        http_client_admin,
+        id=client_schema.id,
+        expected_status=status.HTTP_400_BAD_REQUEST,
+    )
 
-#     updated_data = await update_client(
-#         client=http_client_admin,
-#         id=id,
-#         name=new_name,
-#     )
-#     check_client_data(updated_data, new_name, is_admin)
-
-#     data = await get_client(http_client_admin, id)
-#     check_client_data(data, new_name, is_admin)
-
-#     # Update is_admin
-#     for is_admin in [True, False]:
-#         updated_data = await update_client(
-#             client=http_client_admin,
-#             id=id,
-#             is_admin=is_admin,
-#         )
-#         check_client_data(updated_data, new_name, is_admin)
-
-#         data = await get_client(http_client_admin, id)
-#         check_client_data(data, new_name, is_admin)
-
-#     # Update credentials
-#     updated_data = await update_client(
-#         client=http_client_admin,
-#         id=id,
-#         regenerate_credentials=True,
-#     )
-#     check_client_data(updated_data, new_name, is_admin, credentials=True)
-
-#     data = await get_client(http_client_admin, id)
-#     check_client_data(data, new_name, is_admin)
-
-#     # Try to update a nonexistent client
-#     await update_client(
-#         client=http_client_admin,
-#         id=NONEXISTENT_ID,
-#         name=new_name,
-#         expected_status=status.HTTP_404_NOT_FOUND,
-#     )
+    await delete_client(
+        http_client_admin,
+        id=client_schema.id,
+        expected_status=status.HTTP_400_BAD_REQUEST,
+    )
 
 
-# @pytest.mark.anyio
-# async def test_delete_client(http_client_admin: AsyncClient) -> None:
-#     clients_to_delete = []
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "id,expected_status",
+    [
+        (utils.NONEXISTENT_ID, status.HTTP_404_NOT_FOUND),
+        ("invalid_id", status.HTTP_422_UNPROCESSABLE_CONTENT),
+    ],
+)
+async def test_client_invalid_ids(
+    http_client_admin: AsyncClient,
+    id: int | str,
+    expected_status: status,
+) -> None:
+    await get_client(http_client_admin, id, expected_status)
 
-#     for name, is_admin in [
-#         ("Admin Service to Delete", True),
-#         ("Service to Delete", False),
-#     ]:
-#         new_data = await create_new_client(
-#             client=http_client_admin,
-#             name=name,
-#             is_admin=is_admin,
-#         )
-#         clients_to_delete.append(new_data)
+    await update_client(
+        http_client_admin,
+        id=id,
+        name="New Name",
+        is_admin=True,
+        regenerate_credentials=True,
+        expected_status=expected_status,
+    )
 
-#         data = await get_client(http_client_admin, new_data["id"])
-#         check_client_data(data)
-
-#     for client in clients_to_delete:
-#         id = client["id"]
-
-#         await delete_client(
-#             client=http_client_admin,
-#             id=id,
-#             expected_status=status.HTTP_204_NO_CONTENT,
-#         )
-
-#         await get_client(
-#             client=http_client_admin,
-#             id=id,
-#             expected_status=status.HTTP_400_BAD_REQUEST,
-#         )
-
-#         await delete_client(
-#             client=http_client_admin,
-#             id=id,
-#             expected_status=status.HTTP_400_BAD_REQUEST,
-#         )
-
-#     # Try to delete a nonexistent client
-#     await delete_client(
-#         client=http_client_admin,
-#         id=NONEXISTENT_ID,
-#         expected_status=status.HTTP_404_NOT_FOUND,
-#     )
+    await delete_client(http_client_admin, id, expected_status)

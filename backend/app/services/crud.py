@@ -2,7 +2,8 @@ from collections.abc import Sequence
 from typing import Any
 
 from pydantic import BaseModel
-from sqlalchemy import UnaryExpression, asc, select, update
+from sqlalchemy import UnaryExpression, asc, select
+from sqlalchemy import update as sqlalchemy_update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
@@ -150,6 +151,7 @@ class CRUDBase[
         self,
         db_session: AsyncSession,
         updates: Sequence[tuple[ModelType, UpdateSchemaType | dict[str, Any]]],
+        refresh: bool = False,
     ) -> None:
         data_list = []
 
@@ -163,5 +165,9 @@ class CRUDBase[
                 data["uid"] = db_object.uid  # type: ignore[attr-defined]
                 data_list.append(data)
 
-        await db_session.execute(update(self._model), data_list)
+        await db_session.execute(sqlalchemy_update(self._model), data_list)
         await db_session.commit()
+
+        if refresh:
+            for db_object, _ in updates:
+                await db_session.refresh(db_object)

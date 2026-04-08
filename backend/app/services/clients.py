@@ -114,9 +114,9 @@ class ServiceClient(CRUDBase[Client, ClientCreatePrivate, ClientUpdatePrivate]):
         db_session: AsyncSession,
         page: int,
         per_page: int,
-        active: bool,
+        active_only: bool,
     ) -> Sequence[Client]:
-        filters = [Client.deleted_at.is_(None)] if active else []
+        filters = [Client.deleted_at.is_(None)] if active_only else []
 
         return await self.get_multi(
             db_session,
@@ -137,7 +137,7 @@ class ServiceClient(CRUDBase[Client, ClientCreatePrivate, ClientUpdatePrivate]):
             else (None, None, None)
         )
 
-        updated_client = await service_client.update(
+        updated_client = await self.update(
             db_session,
             db_object=client,
             update_schema=ClientUpdatePrivate(
@@ -171,6 +171,7 @@ class ServiceClient(CRUDBase[Client, ClientCreatePrivate, ClientUpdatePrivate]):
     ) -> None:
         client.deleted_at = now_utc()
         await db_session.commit()
+        await db_session.refresh(client)
 
 
 service_client = ServiceClient(Client)

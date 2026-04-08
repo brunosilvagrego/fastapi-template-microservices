@@ -90,12 +90,16 @@ def new_client_credentials() -> tuple[str, str, str]:
     return client_id, client_secret, client_secret_hash
 
 
-def create_access_token(data: dict) -> str:
+def create_access_token(
+    data: dict,
+    expire_delta: timedelta | None = None,
+) -> str:
     to_encode = deepcopy(data)
 
-    expire = utils.now_utc() + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    if expire_delta is None:
+        expire_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    expire = utils.now_utc() + expire_delta
 
     to_encode.update({"exp": expire})
 

@@ -1,11 +1,11 @@
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 from app.schemas.base import BaseModel, NonEmptyModel
 
 
 class ItemBase(BaseModel):
-    title: str
-    description: str
+    title: str = Field(min_length=1)
+    description: str = Field(min_length=1)
 
 
 class ItemCreate(ItemBase):
@@ -25,7 +25,7 @@ class ItemRead(ItemBase):
 
 
 class ItemUpdate(NonEmptyModel):
-    title: str | None = None
-    description: str | None = None
+    title: str | None = Field(default=None, min_length=1)
+    description: str | None = Field(default=None, min_length=1)
 
     model_config = ConfigDict(extra="forbid")

@@ -43,7 +43,7 @@ async def create_client(
 @router.get("", response_model=list[ClientRead])
 async def list_clients(
     pagination: Annotated[PaginationParams, Depends(paginate())],
-    active: bool = Query(
+    active_only: bool = Query(
         True,
         description="When true, only active clients are returned",
     ),
@@ -53,7 +53,7 @@ async def list_clients(
         db_session,
         pagination.page,
         pagination.per_page,
-        active,
+        active_only,
     )
 
 

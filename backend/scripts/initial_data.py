@@ -23,7 +23,7 @@ async def create_users():
             db_session,
             page=1,
             per_page=100,
-            active=False,
+            active_only=False,
         )
 
         if clients:
