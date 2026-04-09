@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from app.api import router
 from app.api.home import router as home_router
 from app.core.logging_config import setup_logging
+from app.core.middleware import RequestLoggingMiddleware
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -24,6 +25,8 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="<Service Name> API", lifespan=lifespan)
+
+app.add_middleware(RequestLoggingMiddleware)
 
 app.include_router(home_router)
 app.include_router(router)
