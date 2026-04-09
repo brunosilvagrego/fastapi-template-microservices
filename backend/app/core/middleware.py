@@ -8,16 +8,11 @@ logger = logging.getLogger(__name__)
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        request_str = f"Request: {request.method} {request.url}"
         try:
             response = await call_next(request)
-            logger.info(
-                f"Request: {request.method} {request.url} | "
-                f"Response: {response.status_code}"
-            )
+            logger.info(f"{request_str} | Response: {response.status_code}")
             return response
         except Exception as e:
-            logger.error(
-                f"Request: {request.method} {request.url} | "
-                f"Failed with exception: {e}"
-            )
+            logger.error(f"{request_str} | Failed with exception: {e}")
             raise
