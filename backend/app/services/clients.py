@@ -30,10 +30,29 @@ logger = logging.getLogger(__name__)
 
 
 class ServiceClient(CRUDBase[Client, ClientCreatePrivate, ClientUpdatePrivate]):
+    """Service layer for ``Client`` management.
+
+    Extends :class:`~app.services.crud.CRUDBase` with business logic for
+    OAuth2 client-credential authentication, credential generation, soft
+    deletion, and admin-level CRUD operations.
+    """
+
     def raise_unauthorized(
         self,
         detail: str = "Incorrect client_id or client_secret",
     ) -> Never:
+        """Raise an HTTP 401 Unauthorized exception.
+
+        Centralises the construction of 401 responses so that authentication
+        failures always surface the same error shape to callers.
+
+        Args:
+            detail: Human-readable error message included in the response body.
+                Defaults to a generic credential-mismatch message.
+
+        Raises:
+            HTTPException: Always raised with status ``401 Unauthorized``.
+        """
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=detail,
@@ -45,6 +64,27 @@ class ServiceClient(CRUDBase[Client, ClientCreatePrivate, ClientUpdatePrivate]):
         client_id: str | None,
         client_secret: str | None,
     ) -> Token:
+        """Validate OAuth2 client credentials and return an access token.
+
+        Looks up the client by ``client_id``, verifies the provided
+        ``client_secret`` against the stored hash, and issues a signed JWT on
+        success.
+
+        Args:
+            db_session: The active async database session.
+            client_id: The OAuth2 ``client_id`` submitted by the caller.
+            client_secret: The plaintext ``client_secret`` submitted by the
+                caller.
+
+        Returns:
+            A :class:`~app.schemas.token.Token` containing the signed JWT
+            access token and its type.
+
+        Raises:
+            HTTPException: ``401 Unauthorized`` when either credential is
+                ``None``, the client does not exist, or the secret does not
+                match the stored hash.
+        """
         if client_id is None or client_secret is None:
             self.raise_unauthorized()
 
@@ -68,6 +108,27 @@ class ServiceClient(CRUDBase[Client, ClientCreatePrivate, ClientUpdatePrivate]):
         db_session: AsyncSession,
         create_schema: ClientCreate,
     ) -> ClientCreateResponse:
+        """Register a new OAuth2 client and return its credentials.
+
+        Generates a unique ``client_id`` / ``client_secret`` pair, stores the
+        hashed secret, and returns the plaintext secret **once** in the
+        response. The plaintext secret is never persisted and cannot be
+        retrieved again.
+
+        Args:
+            db_session: The active async database session.
+            create_schema: Public-facing creation payload containing the
+                client ``name`` and optional ``is_admin`` flag.
+
+        Returns:
+            A :class:`~app.schemas.clients.ClientCreateResponse` that includes
+            the generated ``client_id`` and plaintext ``client_secret``.
+
+        Raises:
+            HTTPException: ``409 Conflict`` when a client with the same
+                ``oauth_id`` already exists (rare collision). ``500 Internal
+                Server Error`` for any other persistence failure.
+        """
         client_id, client_secret, client_secret_hash = new_client_credentials()
 
         try:
@@ -116,6 +177,19 @@ class ServiceClient(CRUDBase[Client, ClientCreatePrivate, ClientUpdatePrivate]):
         per_page: int,
         active_only: bool,
     ) -> Sequence[Client]:
+        """Return a paginated list of clients.
+
+        Args:
+            db_session: The active async database session.
+            page: 1-based page number.
+            per_page: Maximum number of clients to return per page.
+            active_only: When ``True``, only clients whose ``deleted_at`` is
+                ``NULL`` (i.e. not soft-deleted) are included.
+
+        Returns:
+            A sequence of :class:`~app.models.clients.Client` ORM instances
+            for the requested page.
+        """
         filters = [Client.deleted_at.is_(None)] if active_only else []
 
         return await self.get_multi(
@@ -131,6 +205,28 @@ class ServiceClient(CRUDBase[Client, ClientCreatePrivate, ClientUpdatePrivate]):
         client: Client,
         update_schema: ClientUpdate,
     ) -> ClientUpdateResponse:
+        """Apply an admin update to a client, optionally rotating credentials.
+
+        When ``update_schema.regenerate_credentials`` is ``True``, a fresh
+        ``client_id`` / ``client_secret`` pair is generated and the new
+        plaintext secret is returned in the response (it is not stored).
+
+        Args:
+            db_session: The active async database session.
+            client: The :class:`~app.models.clients.Client` ORM instance to
+                update.
+            update_schema: Admin update payload; may include a new ``name``,
+                ``is_admin`` flag, and/or a credential-rotation request.
+
+        Returns:
+            A :class:`~app.schemas.clients.ClientUpdateResponse` reflecting
+            the updated state. ``client_id`` and ``client_secret`` are
+            ``None`` when credentials were not regenerated.
+
+        Raises:
+            HTTPException: ``500 Internal Server Error`` if the underlying
+                update operation returns ``None``.
+        """
         new_client_id, new_client_secret, new_client_secret_hash = (
             new_client_credentials()
             if update_schema.regenerate_credentials
@@ -169,6 +265,17 @@ class ServiceClient(CRUDBase[Client, ClientCreatePrivate, ClientUpdatePrivate]):
         db_session: AsyncSession,
         client: Client,
     ) -> None:
+        """Soft-delete a client by setting its ``deleted_at`` timestamp.
+
+        The client record is retained in the database but is excluded from
+        active-only queries. This operation is irreversible through the
+        standard API surface.
+
+        Args:
+            db_session: The active async database session.
+            client: The :class:`~app.models.clients.Client` ORM instance to
+                deactivate.
+        """
         client.deleted_at = now_utc()
         await db_session.commit()
         await db_session.refresh(client)
