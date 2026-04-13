@@ -260,6 +260,7 @@ async def test_get_item(
         (5, "Description C", status.HTTP_422_UNPROCESSABLE_CONTENT),
         ("Item C", "", status.HTTP_422_UNPROCESSABLE_CONTENT),
         ("Item C", 5, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (None, None, status.HTTP_422_UNPROCESSABLE_CONTENT),
     ],
 )
 async def test_update_item(
